@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 import re
 import sys 
 
-from yahmm import *
+from pomegranate import *
 from PyPore.hmm import *
 from PyPore.DataTypes import *
 
