@@ -45,6 +45,7 @@ def EpigeneticsModel(distributions, name, low=0, high=90):
             ends=ends,
             edges=transitions,
             verbose=True,
+            max_iter=10,
         )
 
         return model
@@ -243,7 +244,7 @@ def insert_delete_plot(model, events):
     plt.show()
 
 
-def train(model, events, threshold=0.10):
+def train(model: DenseHMM, events, threshold=0.10):
     """
     This is a full step of training of the model. This involves a cross-training
     step to determine which parameter should be used to filter out events from
@@ -263,7 +264,9 @@ def train(model, events, threshold=0.10):
 
     # Train the HMM using those events
     tic = time.time()
-    model.train(events, max_iterations=10, use_pseudocount=True)
+    X = torch.tensor(events)
+    # max_iter was set in the model initialisation
+    model.fit(X)
     print("Training on {} events took {}".format(len(events), time.time() - tic))
 
     return model
@@ -364,7 +367,7 @@ def threshold_scan(train, test):
             model = Model.read(infile)
 
         # Train the model on the training events
-        model.train(event_subset, max_iterations=10, use_pseudocount=True)
+        model.fit(torch.tensor(event_subset))
 
         # Now score each of the testing events
         data = analyze_events(test, model).sort("Score")
@@ -384,9 +387,6 @@ def threshold_scan(train, test):
 def get_events(*args, **kwargs):
     raise Exception("Umimplemented")
 
-
-"""    """ """    """
-"""    """ """    """
 
 if __name__ == "__main__":
     # List all the files which will be used in the analysis.
