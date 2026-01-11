@@ -11,7 +11,8 @@ import itertools as it
 import seaborn as sns
 from matplotlib import pyplot as plt
 import re
-import sys 
+import sys
+import time 
 
 from yahmm import *
 from PyPore.hmm import *
@@ -635,7 +636,7 @@ def test( model, events ):
 	'''
 
 	# Analyze the data, and sort it by filter score
-	data = analyze_events( events, model ).sort( 'Filter Score' )
+	data = analyze_events( events, model ).sort_values( 'Filter Score' )
 	n = len(data)
 
 	# Attach the list of accuracies using the top i events to the frame
@@ -671,7 +672,7 @@ def n_fold_cross_validation( events, n=5 ):
 		else:
 			data = pd.concat( [ data, test(model, testing) ] )
 
-	data = data.sort( 'Filter Score' )
+	data = data.sort_values( 'Filter Score' )
 	n = len(data)
 
 	return [ 1. * sum( data['Soft Call'][i:] ) / (n-i) for i in xrange( n ) ][::-1]
@@ -704,8 +705,8 @@ def threshold_scan( train, test ):
 	for threshold in 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.75, 0.9:
 		print "Threshold set at {}".format( threshold )
 
-		# Take only the events whose filter socre is above a threshold
-		event_subset = [ event for event, score in it.izip( train, train_data.Score ) if score > threshold ]
+		# Take only the events whose filter score is above a threshold
+		event_subset = [ event for event, score in it.izip( train, train_data['Filter Score'] ) if score > threshold ]
 
 		# If no events left, do not perform training.
 		if len(event_subset) == 0:
@@ -719,7 +720,7 @@ def threshold_scan( train, test ):
 		model.train( event_subset, max_iterations=10, use_pseudocount=True )
 
 		# Now score each of the testing events
-		data = analyze_events( test, model ).sort( 'Score' )
+		data = analyze_events( test, model ).sort_values( 'Filter Score' )
 		n = len(data)
 
 		# Attach the list of accuracies using the top i events to the frame

@@ -7,4 +7,8 @@ from pypore_compat import File, HMMBoard
 # Load pre-segmented events
 f = File.from_json('Data/14418004-s04.json')
 events = [[seg.mean for seg in event.segments] for event in f.events]
+
+
 ```
+
+returns a neseted loop. each json has a variable number of events, and each event returns a variable length list of means from each segment
