@@ -1,0 +1,25 @@
+# Data files
+*.zip
+*.tar.gz
+*.fastq
+*.fast5
+*.bam
+*.sam
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
