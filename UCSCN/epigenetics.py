@@ -3,6 +3,7 @@
 #          jmschreiber91@gmail.com
 
 
+from json import load
 import pandas as pd
 import numpy as np
 import itertools as it
@@ -17,6 +18,8 @@ from functools import reduce
 
 from pomegranate.hmm import DenseHMM
 from pomegranate.distributions import Normal
+
+from yahmm_loader import load_yahmm_model
 # from PyPore.hmm import *
 # from PyPore.DataTypes import *
 
@@ -307,8 +310,7 @@ def n_fold_cross_validation(events, n=5):
         training = reduce(lambda x, y: x + y, folds[:i] + folds[i + 1 :], [])
         testing = folds[i]
 
-        with open("untrained_hmm.txt", "r") as infile:
-            model = Model.read(infile)
+        model, _ = load_yahmm_model("untrained_hmm.txt", False)
         model = train(model, training, threshold=0.1)
 
         if i == 0:
@@ -340,8 +342,7 @@ def threshold_scan(train, test):
     accuracy as to each one.
     """
 
-    with open("untrained_hmm.txt", "r") as infile:
-        model = Model.read(infile)
+    model, _ = load_yahmm_model("untrained_hmm.txt", False)
 
     # Get the filter scores for each event in the training set
     train_data = analyze_events(train, model)
@@ -363,8 +364,7 @@ def threshold_scan(train, test):
             continue
 
         # Open a fresh copy of the HMM.
-        with open("untrained_hmm.txt", "r") as infile:
-            model = Model.read(infile)
+        model, _ = load_yahmm_model("untrained_hmm.txt", False)
 
         # Train the model on the training events
         model.fit(torch.tensor(event_subset))
@@ -409,8 +409,7 @@ if __name__ == "__main__":
     print("Beginning")
     # print("Building Profile HMM...")
 
-    with open("untrained_hmm.txt") as infile:
-        model = Model.read(infile)
+    model, state_names = load_yahmm_model("untrained_hmm.txt")
 
     # Get all the events
     events = get_events(files, model)
