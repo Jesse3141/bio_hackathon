@@ -1,0 +1,60 @@
+name: bio_hack
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # Core Python
+  - python=3.10
+  - pip
+
+  # Scientific computing
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+
+  # Visualization
+  - matplotlib
+  - seaborn
+
+  # Bioinformatics tools
+  - samtools
+  - htslib
+
+  # Jupyter environment
+  - jupyterlab
+  - ipykernel
+
+  # Data formats
+  - h5py
+  - pyyaml
+
+  # System/build dependencies
+  - zlib
+  - bzip2
+
+  # Pip packages (not available in conda or need specific versions)
+  - pip:
+    # Nanopore data handling
+    - pod5
+    - ont-fast5-api
+    - pysam
+    - pyslow5
+
+    # Signal alignment
+    - uncalled4
+
+    # HMM/ML libraries
+    - pomegranate
+    - torch
+    - numba
+
+    # Visualization
+    - plotly
+    - dash
+
+    # Utilities
+    - tqdm
+    - polars
