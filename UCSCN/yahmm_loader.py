@@ -77,6 +77,7 @@ from typing import Dict, List, Tuple, Optional
 @dataclass
 class ParsedState:
     """Represents a parsed state from YAHMM format."""
+
     identity: str
     name: str
     weight: float
@@ -84,12 +85,13 @@ class ParsedState:
 
     @property
     def is_silent(self) -> bool:
-        return self.distribution is None or self.distribution == 'None'
+        return self.distribution is None or self.distribution == "None"
 
 
 @dataclass
 class ParsedTransition:
     """Represents a parsed transition from YAHMM format."""
+
     from_name: str
     to_name: str
     probability: float
@@ -98,7 +100,9 @@ class ParsedTransition:
     to_id: str
 
 
-def parse_yahmm_file(filepath: str) -> Tuple[str, Dict[str, ParsedState], List[ParsedTransition]]:
+def parse_yahmm_file(
+    filepath: str,
+) -> Tuple[str, Dict[str, ParsedState], List[ParsedTransition]]:
     """
     Parse a YAHMM model.txt file.
 
@@ -113,7 +117,7 @@ def parse_yahmm_file(filepath: str) -> Tuple[str, Dict[str, ParsedState], List[P
     states = {}
     transitions = []
 
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         lines = f.readlines()
 
     # Parse header: "{model_name} {num_states}"
@@ -131,8 +135,8 @@ def parse_yahmm_file(filepath: str) -> Tuple[str, Dict[str, ParsedState], List[P
         weight = float(parts[2])
 
         # Distribution is everything after weight
-        dist_str = ' '.join(parts[3:]) if len(parts) > 3 else 'None'
-        distribution = None if dist_str == 'None' else dist_str
+        dist_str = " ".join(parts[3:]) if len(parts) > 3 else "None"
+        distribution = None if dist_str == "None" else dist_str
 
         states[identity] = ParsedState(identity, name, weight, distribution)
 
@@ -143,19 +147,23 @@ def parse_yahmm_file(filepath: str) -> Tuple[str, Dict[str, ParsedState], List[P
             continue
 
         parts = line.split()
-        transitions.append(ParsedTransition(
-            from_name=parts[0],
-            to_name=parts[1],
-            probability=float(parts[2]),
-            pseudocount=float(parts[3]),
-            from_id=parts[4],
-            to_id=parts[5]
-        ))
+        transitions.append(
+            ParsedTransition(
+                from_name=parts[0],
+                to_name=parts[1],
+                probability=float(parts[2]),
+                pseudocount=float(parts[3]),
+                from_id=parts[4],
+                to_id=parts[5],
+            )
+        )
 
     return model_name, states, transitions
 
 
-def classify_states(states: Dict[str, ParsedState]) -> Tuple[Dict[str, ParsedState], Dict[str, ParsedState]]:
+def classify_states(
+    states: Dict[str, ParsedState],
+) -> Tuple[Dict[str, ParsedState], Dict[str, ParsedState]]:
     """Separate states into emitting and silent."""
     emitting = {k: v for k, v in states.items() if not v.is_silent}
     silent = {k: v for k, v in states.items() if v.is_silent}
@@ -165,7 +173,7 @@ def classify_states(states: Dict[str, ParsedState]) -> Tuple[Dict[str, ParsedSta
 def build_transition_matrices(
     emitting_states: Dict[str, ParsedState],
     silent_states: Dict[str, ParsedState],
-    transitions: List[ParsedTransition]
+    transitions: List[ParsedTransition],
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Build the four transition submatrices.
@@ -207,10 +215,7 @@ def build_transition_matrices(
 
 
 def eliminate_silent_states(
-    P_EE: np.ndarray,
-    P_ES: np.ndarray,
-    P_SE: np.ndarray,
-    P_SS: np.ndarray
+    P_EE: np.ndarray, P_ES: np.ndarray, P_SE: np.ndarray, P_SS: np.ndarray
 ) -> np.ndarray:
     """
     Eliminate silent states using matrix algebra.
@@ -254,7 +259,7 @@ def compute_effective_boundaries(
     silent_states: Dict[str, ParsedState],
     P_ES: np.ndarray,
     P_SE: np.ndarray,
-    silent_closure: np.ndarray
+    silent_closure: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Compute effective start and end probabilities."""
 
@@ -270,9 +275,9 @@ def compute_effective_boundaries(
     model_start = None
     model_end = None
     for s in states.values():
-        if s.name.endswith('-start') and model_name in s.name:
+        if s.name.endswith("-start") and model_name in s.name:
             model_start = s
-        if s.name.endswith('-end') and model_name in s.name:
+        if s.name.endswith("-end") and model_name in s.name:
             model_end = s
 
     # Compute start probabilities
@@ -311,12 +316,12 @@ def parse_distribution(dist_str: str) -> Tuple[Optional[str], Optional[List[floa
     if dist_str is None:
         return None, None
 
-    match = re.match(r'(\w+)\((.*)\)', dist_str)
+    match = re.match(r"(\w+)\((.*)\)", dist_str)
     if not match:
         return None, None
 
     dist_type = match.group(1)
-    params = [float(x.strip()) for x in match.group(2).split(',')]
+    params = [float(x.strip()) for x in match.group(2).split(",")]
 
     return dist_type, params
 
@@ -370,9 +375,14 @@ def load_yahmm_model(filepath: str, verbose: bool = True):
 
     # Compute boundaries
     effective_starts, effective_ends = compute_effective_boundaries(
-        model_name, states, transitions,
-        emitting_states, silent_states,
-        P_ES, P_SE, silent_closure
+        model_name,
+        states,
+        transitions,
+        emitting_states,
+        silent_states,
+        P_ES,
+        P_SE,
+        silent_closure,
     )
 
     # Create distributions
@@ -383,19 +393,23 @@ def load_yahmm_model(filepath: str, verbose: bool = True):
 
     for id_ in emit_ids:
         state = emitting_states[id_]
-        state_names.append(state.name)
+        state_names.append(state)
         dist_type, params = parse_distribution(state.distribution)
 
-        if dist_type == 'NormalDistribution':
+        if dist_type == "NormalDistribution":
             mean, std = params
             # covariance_type='diag' for univariate - pass variance as 1D array
-            distributions.append(Normal(means=[mean], covs=[std**2], covariance_type='diag'))
-        elif dist_type == 'UniformDistribution':
+            distributions.append(
+                Normal(means=[mean], covs=[std**2], covariance_type="diag")
+            )
+        elif dist_type == "UniformDistribution":
             # Approximate uniform with normal (same mean, matched variance)
             low, high = params
             mean = (low + high) / 2
             std = (high - low) / np.sqrt(12)
-            distributions.append(Normal(means=[mean], covs=[std**2], covariance_type='diag'))
+            distributions.append(
+                Normal(means=[mean], covs=[std**2], covariance_type="diag")
+            )
         else:
             raise ValueError(f"Unknown distribution type: {dist_type}")
 
@@ -411,13 +425,15 @@ def load_yahmm_model(filepath: str, verbose: bool = True):
     n_nonzero = np.count_nonzero(P_effective)
     sparsity = 1 - n_nonzero / P_effective.size
     if verbose:
-        print(f"Building DenseHMM (sparsity: {sparsity:.1%}, {n_nonzero} non-zero edges)...")
+        print(
+            f"Building DenseHMM (sparsity: {sparsity:.1%}, {n_nonzero} non-zero edges)..."
+        )
 
     model = DenseHMM(
         distributions=distributions,
         edges=torch.tensor(P_effective, dtype=torch.float32),
         starts=torch.tensor(starts_normalized, dtype=torch.float32),
-        ends=torch.tensor(effective_ends, dtype=torch.float32)
+        ends=torch.tensor(effective_ends, dtype=torch.float32),
     )
 
     if verbose:
@@ -428,7 +444,10 @@ def load_yahmm_model(filepath: str, verbose: bool = True):
 
 # Validation utilities
 
-def validate_model(P_effective: np.ndarray, effective_starts: np.ndarray, effective_ends: np.ndarray):
+
+def validate_model(
+    P_effective: np.ndarray, effective_starts: np.ndarray, effective_ends: np.ndarray
+):
     """Validate the eliminated model matrices."""
     issues = []
 
@@ -457,7 +476,7 @@ def validate_model(P_effective: np.ndarray, effective_starts: np.ndarray, effect
     return issues
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
@@ -468,5 +487,5 @@ if __name__ == '__main__':
     model, state_names = load_yahmm_model(filepath)
 
     print(f"\nState names (first 10):")
-    for name in state_names[:10]:
-        print(f"  {name}")
+    for state in state_names[:10]:
+        print(f"  {state.name}")

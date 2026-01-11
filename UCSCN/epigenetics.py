@@ -2,14 +2,11 @@
 # Contact: Jacob Schreiber
 #          jmschreiber91@gmail.com
 
+import pdb
 
-from json import load
 import pandas as pd
 import numpy as np
-import itertools as it
-import seaborn as sns
 from matplotlib import pyplot as plt
-import re
 import sys
 import torch
 import time
@@ -18,8 +15,12 @@ from functools import reduce
 
 from pomegranate.hmm import DenseHMM
 from pomegranate.distributions import Normal
+import tqdm
 
-from yahmm_loader import load_yahmm_model
+from yahmm_loader import ParsedState, load_yahmm_model
+from pypore_compat import File
+
+
 # from PyPore.hmm import *
 # from PyPore.DataTypes import *
 
@@ -114,7 +115,7 @@ def build_profile():
     return profile
 
 
-def analyze_events(events, hmm):
+def analyze_events(events, hmm: DenseHMM, states: list[ParsedState]):
     """
     Take in a list of events and create a dataframe of the data.
     """
@@ -130,9 +131,9 @@ def analyze_events(events, hmm):
     data["Soft Call"] = []
 
     tags = ("C", "mC", "hmC", "X", "T", "CAT")
-    indices = {state.name: i for i, state in enumerate(hmm.states)}
+    indices = {state.name: i for i, state in enumerate(states)}
 
-    for idx, event in enumerate(events):
+    for idx, event in tqdm.tqdm(enumerate(events), total=len(events)):
         # Hold data for the single event in 'd'. The fields will hold a single
         # piece of information.
         d = {key: None for key in data.keys()}
@@ -140,7 +141,8 @@ def analyze_events(events, hmm):
         # Run forward-backward on that event to get the expected transitions
         # matrix
         # print(event)
-        trans, ems = hmm.forward_backward(event)
+        X = torch.as_tensor(event).unsqueeze(0).unsqueeze(-1)
+        trans, ems, _, _, _ = hmm.forward_backward(X)
 
         # Get the expected number of transitions from all states to the first
         # match state of each fork, and the the expected number of transitions
@@ -150,14 +152,14 @@ def analyze_events(events, hmm):
         # fork, because we care about the expectation of going through the
         # entire event.
         for tag in "C", "mC", "hmC":
-            names = ["M-{}:{}-end".format(tag, i) for i in range(25, 34)]
-            d[tag] = min([trans[indices[name]].sum() for name in names])
+            names = ["M-{}:{}".format(tag, i) for i in range(25, 34)]
+            d[tag] = min([trans[:, indices[name]].sum() for name in names])
 
         # Perform the same calculation, except on the label fork now instead
         # of the cytosine variant fork.
         for tag in "X", "T", "CAT":
-            names = ["M-{}:{}-end".format(tag, i) for i in range(37, 43)]
-            d[tag] = min([trans[indices[name]].sum() for name in names])
+            names = ["M-{}:{}".format(tag, i) for i in range(37, 43)]
+            d[tag] = min([trans[:, indices[name]].sum() for name in names])
 
         # Calculate the score, which will be the sum of all expected
         # transitions to each of the three forks, and the expected transitions
@@ -247,7 +249,7 @@ def insert_delete_plot(model, events):
     plt.show()
 
 
-def train(model: DenseHMM, events, threshold=0.10):
+def train(model: DenseHMM, events, states, threshold=0.10):
     """
     This is a full step of training of the model. This involves a cross-training
     step to determine which parameter should be used to filter out events from
@@ -256,7 +258,7 @@ def train(model: DenseHMM, events, threshold=0.10):
     """
 
     tic = time.time()
-    data = analyze_events(events, model)
+    data = analyze_events(events, model, states)
     print("Scoring Events Took {}s".format(time.time() - tic))
 
     # Get the events using the best threshold
@@ -267,22 +269,23 @@ def train(model: DenseHMM, events, threshold=0.10):
 
     # Train the HMM using those events
     tic = time.time()
-    X = torch.tensor(events)
-    # max_iter was set in the model initialisation
+    X = [
+        torch.as_tensor(event, dtype=torch.float32).unsqueeze(-1) for event in events
+    ]  # max_iter was set in the model initialisation
     model.fit(X)
     print("Training on {} events took {}".format(len(events), time.time() - tic))
 
     return model
 
 
-def test(model, events):
+def test(model, events, states):
     """
     Test the model on the events, returning a list of accuracies should the top
     i events be used.
     """
 
     # Analyze the data, and sort it by filter score
-    data = analyze_events(events, model).sort("Filter Score")
+    data = analyze_events(events, model, states).sort("Filter Score")
     n = len(data)
 
     # Attach the list of accuracies using the top i events to the frame
@@ -311,12 +314,12 @@ def n_fold_cross_validation(events, n=5):
         testing = folds[i]
 
         model, _ = load_yahmm_model("untrained_hmm.txt", False)
-        model = train(model, training, threshold=0.1)
+        model = train(model, training, states, threshold=0.1)
 
         if i == 0:
-            data = test(model, testing)
+            data = test(model, testing, states)
         else:
-            data = pd.concat([data, test(model, testing)])
+            data = pd.concat([data, test(model, testing, states)])
 
     data = data.sort("Filter Score")
     n = len(data)
@@ -384,35 +387,41 @@ def threshold_scan(train, test):
     return accuracies
 
 
-def get_events(*args, **kwargs):
-    raise Exception("Umimplemented")
+def get_events(file_names):
+    # Load pre-segmented events
+    events = []
+    for file in file_names:
+        f = File.from_json(file)
+        for event in f.events:
+            events.append([seg.mean for seg in event.segments])
+    return events
 
 
 if __name__ == "__main__":
     # List all the files which will be used in the analysis.
     files = [
-        "14418004-s04.abf",
-        "14418005-s04.abf",
-        "14418006-s04.abf",
-        "14418007-s04.abf",
-        "14418008-s04.abf",
-        "14418009-s04.abf",
-        "14418010-s04.abf",
-        "14418011-s04.abf",
-        "14418012-s04.abf",
-        "14418013-s04.abf",
-        "14418014-s04.abf",
-        "14418015-s04.abf",
-        "14418016-s04.abf",
+        "Data/14418004-s04.json",
+        "Data/14418005-s04.json",
+        "Data/14418006-s04.json",
+        "Data/14418007-s04.json",
+        "Data/14418008-s04.json",
+        "Data/14418009-s04.json",
+        "Data/14418010-s04.json",
+        "Data/14418011-s04.json",
+        "Data/14418012-s04.json",
+        "Data/14418013-s04.json",
+        "Data/14418014-s04.json",
+        "Data/14418015-s04.json",
+        "Data/14418016-s04.json",
     ]
 
     print("Beginning")
     # print("Building Profile HMM...")
 
-    model, state_names = load_yahmm_model("untrained_hmm.txt")
+    model, states = load_yahmm_model("untrained_hmm.txt")
 
     # Get all the events
-    events = get_events(files, model)
+    events = get_events(files)
     print("{} events detected".format(len(events)))
 
     train_fold, test_fold = train_test_split(events, train_perc=0.7)
@@ -422,8 +431,8 @@ if __name__ == "__main__":
         )
     )
 
-    model = train(model, train_fold, threshold=0.1)
-    data = test(model, test_fold)
+    model = train(model, train_fold, states, threshold=0.1)
+    data = test(model, test_fold, states)
 
     data.to_csv("Test Set.csv")
 
@@ -434,7 +443,7 @@ if __name__ == "__main__":
     for i in range(10):
         print("\nIteration {}".format(i))
         random.shuffle(events)
-        accuracies.append(n_fold_cross_validation(events, n=5))
+        accuracies.append(n_fold_cross_validation(events, states, n=5))
 
     accuracies = np.array(accuracies)
     np.savetxt("n_fold_accuracies.txt", accuracies)
