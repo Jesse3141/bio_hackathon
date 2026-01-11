@@ -381,6 +381,10 @@ def threshold_scan(train, test):
     return accuracies
 
 
+def get_events(*args, **kwargs):
+    raise Exception("Umimplemented")
+
+
 """    """ """    """
 """    """ """    """
 
