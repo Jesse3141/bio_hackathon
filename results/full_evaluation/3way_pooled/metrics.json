@@ -1,0 +1,94 @@
+{
+  "model": "FullSequenceHMM_3way_pooled",
+  "mode": "3way",
+  "adapters": [
+    "all"
+  ],
+  "overall": {
+    "accuracy": 0.469399976046948,
+    "n_samples": 25049,
+    "n_correct": 11758
+  },
+  "per_class": {
+    "C": 0.548420631747301,
+    "5mC": 0.5694444444444444,
+    "5hmC": 0.19054054054054054
+  },
+  "by_site_type": {
+    "accuracy": {
+      "non_cpg": 0.469399976046948,
+      "cpg": 0.469399976046948,
+      "homopolymer": 0.469399976046948
+    },
+    "n_samples": {
+      "non_cpg": 25049,
+      "cpg": 25049,
+      "homopolymer": 25049
+    }
+  },
+  "confidence_stratified": {
+    "top_25pct": 0.4845097412967103,
+    "top_50pct": 0.5029543276908336,
+    "top_100pct": 0.469399976046948
+  },
+  "confusion_matrix": [
+    [
+      6858,
+      4129,
+      1518
+    ],
+    [
+      2060,
+      3772,
+      792
+    ],
+    [
+      2499,
+      2293,
+      1128
+    ]
+  ],
+  "auc": {
+    "macro": 0.6153821133132794,
+    "per_class": {
+      "C": 0.6153821133132794,
+      "5mC": 0.6153821133132794,
+      "5hmC": 0.6153821133132794
+    }
+  },
+  "cross_validation": {
+    "mean_accuracy": 0.4687170185153636,
+    "std_accuracy": 0.0032774527492054934,
+    "fold_accuracies": [
+      0.4632919477823466,
+      0.47357285429141716,
+      0.4692215568862275,
+      0.4692190993292878,
+      0.46827963428753944
+    ],
+    "mean_auc": 0.0,
+    "std_auc": 0.0,
+    "fold_aucs": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "emission_params_summary": {
+    "source": "pooled",
+    "mode": "3way",
+    "n_positions": 155,
+    "n_cytosines": 8,
+    "mean_C_current": 800.352799356297,
+    "mean_C_std": 104.44898968254836,
+    "mean_delta_5mC_C": 30.204002653216207,
+    "mean_delta_5hmC_C": 8.934292951974967
+  },
+  "configuration": {
+    "name": "3way_pooled",
+    "mode": "3way",
+    "emission_source": "pooled"
+  }
+}

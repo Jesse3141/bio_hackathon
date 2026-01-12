@@ -1,0 +1,14 @@
+model,mode,adapters,metric_type,metric_name,value
+FullSequenceHMM_binary_pooled,binary,all,overall,accuracy,0.633020303236976
+FullSequenceHMM_binary_pooled,binary,all,overall,n_samples,19061.0
+FullSequenceHMM_binary_pooled,binary,all,per_class,C_accuracy,0.6411850177591217
+FullSequenceHMM_binary_pooled,binary,all,per_class,5mC_accuracy,0.6178630301213847
+FullSequenceHMM_binary_pooled,binary,all,site_type,non_cpg_accuracy,0.633020303236976
+FullSequenceHMM_binary_pooled,binary,all,site_type,cpg_accuracy,0.633020303236976
+FullSequenceHMM_binary_pooled,binary,all,site_type,homopolymer_accuracy,0.633020303236976
+FullSequenceHMM_binary_pooled,binary,all,confidence,top_25pct_accuracy,0.7657922350472193
+FullSequenceHMM_binary_pooled,binary,all,confidence,top_50pct_accuracy,0.710283315844701
+FullSequenceHMM_binary_pooled,binary,all,confidence,top_100pct_accuracy,0.633020303236976
+FullSequenceHMM_binary_pooled,binary,all,auc,macro,0.6838718708024922
+FullSequenceHMM_binary_pooled,binary,all,cv,mean_accuracy,0.6327427886604835
+FullSequenceHMM_binary_pooled,binary,all,cv,std_accuracy,0.0035885471053697967
