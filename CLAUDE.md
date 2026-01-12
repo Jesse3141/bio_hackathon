@@ -17,9 +17,45 @@ This is a bioinformatics hackathon project for HMM-based epigenetic modification
 - `refrences/` - Background documentation
   - `nanopore_hmm_epigenetics_guide.md` - Comprehensive guide to the methodology
   - `hackathon_plans.md` - 4-track hackathon plan with detailed tasks
+- `nanopore_ref_data/` - Truth set data for R10.4.1 chemistry
+  - `all_5mers.fa` - Reference FASTA (32 synthetic 155bp constructs)
+  - `all_5mers_C_sites.bed` - Cytosine positions (256 sites across 8 positions per construct)
+  - `DATA_SUMMARY.md` - Full truth set documentation
+- `filtered_pod_files/` - Raw signal data (POD5 format)
+  - `control1_filtered_adapter_01.pod5` - Canonical cytosine reads
+  - `5mc_filtered_adapter_01.pod5` - 5-methylcytosine reads
+- `output/` - Generated data from signal alignment pipeline (see below)
+
+## Signal Alignment Pipeline Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `run_signal_alignment.sh` | Full pipeline: POD5 → Dorado basecall → uncalled4 → signal-aligned BAM |
+| `extract_signal_at_positions.py` | Extract current levels at BED-defined cytosine positions |
+| `compare_signals.py` | Statistical comparison of C vs 5mC distributions |
+| `build_hmm_training_data.py` | Generate HMM training files in multiple formats |
+
+## Generated HMM Training Data (`output/`)
+
+| File | Description |
+|------|-------------|
+| `hmm_emission_params_circuit_board.json` | Gaussian parameters for C/mC states at each position |
+| `hmm_emission_params_pomegranate.json` | Pomegranate-compatible emission distributions |
+| `hmm_training_sequences.csv` | Per-read current values across positions |
+| `kmer_current_model.csv` | 5-mer context → current distribution table |
+| `signal_at_cytosines.csv` | Raw measurements: 30,402 observations |
+
+**Key finding:** 5mC produces +36.7 pA higher current than canonical C (p < 10⁻¹⁸⁹)
 
 ## Key Dependencies
 
+**For signal alignment pipeline (modern R10.4.1 data):**
+```bash
+conda activate nanopore  # Python 3.10 environment
+# Includes: uncalled4, pod5, pysam, pandas, numpy, scipy, biopython, samtools
+```
+
+**For HMM training (original paper code):**
 ```bash
 pip install pomegranate numpy scipy matplotlib pandas seaborn
 # Note: Original code uses YAHMM (deprecated), pomegranate is the successor
@@ -27,6 +63,8 @@ pip install pomegranate numpy scipy matplotlib pandas seaborn
 ```
 
 The code uses:
+- **Dorado** - ONT basecaller with move table output (`~/software/dorado-1.3.0-linux-x64/bin/dorado`)
+- **uncalled4** - DTW-based signal alignment
 - **YAHMM/pomegranate** - HMM library (YAHMM deprecated, port to pomegranate needed)
 - **PyPore** - Nanopore data handling (custom library from UCSC)
 

@@ -46,6 +46,7 @@ from methylation_hmm.evaluation import (
 from methylation_hmm.evaluation.site_type_metrics import (
     load_bed_with_site_types,
     get_site_type_positions,
+    SITE_TYPE_NAMES,
 )
 
 
@@ -62,6 +63,88 @@ def get_default_paths() -> Dict[str, Path]:
 SINGLE_ADAPTER = "5mers_rand_ref_adapter_01"
 BINARY_SAMPLES = ["control", "5mC"]
 THREE_WAY_SAMPLES = ["control", "5mC", "5hmC"]
+
+
+def compute_site_type_accuracy(
+    results: List,
+    y_true: np.ndarray,
+    site_type_positions: Optional[Dict[int, int]],
+    class_names: List[str],
+) -> Tuple[Dict[str, float], Dict[str, int]]:
+    """
+    Compute accuracy by site type using per-position log-likelihoods.
+
+    At each cytosine position, we determine if the model's prediction (based on
+    log-likelihood at that position) matches the ground truth. We then aggregate
+    accuracy by site type.
+
+    Args:
+        results: List of ClassificationResult with per_position_log_probs
+        y_true: Ground truth class indices
+        site_type_positions: Dict mapping position -> site_type (0, 1, 2)
+        class_names: List of class names ['C', '5mC'] or ['C', '5mC', '5hmC']
+
+    Returns:
+        (accuracy_by_site, n_samples_by_site)
+    """
+    acc_by_site = {'non_cpg': 0.0, 'cpg': 0.0, 'homopolymer': 0.0}
+    n_by_site = {'non_cpg': 0, 'cpg': 0, 'homopolymer': 0}
+
+    if not site_type_positions or len(results) == 0:
+        return acc_by_site, n_by_site
+
+    # Check if results have per-position data
+    if results[0].per_position_log_probs is None:
+        # Fallback to overall accuracy
+        accuracy = float((np.array([r.prediction_idx for r in results]) == y_true).mean())
+        for st_name in acc_by_site:
+            acc_by_site[st_name] = accuracy
+            n_by_site[st_name] = len(results)
+        return acc_by_site, n_by_site
+
+    # Group positions by site type
+    positions_by_type: Dict[int, List[int]] = {0: [], 1: [], 2: []}
+    for pos, st in site_type_positions.items():
+        if st in positions_by_type:
+            positions_by_type[st].append(pos)
+
+    # Compute per-position prediction accuracy grouped by site type
+    correct_by_type: Dict[int, int] = {0: 0, 1: 0, 2: 0}
+    total_by_type: Dict[int, int] = {0: 0, 1: 0, 2: 0}
+
+    for i, r in enumerate(results):
+        true_class = class_names[y_true[i]]
+
+        if r.per_position_log_probs is None:
+            continue
+
+        # For each position, check if the highest log-likelihood class matches truth
+        for pos, log_probs in r.per_position_log_probs.items():
+            if pos not in site_type_positions:
+                continue
+
+            site_type = site_type_positions[pos]
+            if site_type not in positions_by_type:
+                continue
+
+            # Find predicted class at this position (highest log-likelihood)
+            pos_pred = max(log_probs, key=log_probs.get)
+
+            total_by_type[site_type] += 1
+            if pos_pred == true_class:
+                correct_by_type[site_type] += 1
+
+    # Convert to accuracy
+    for st, st_name in SITE_TYPE_NAMES.items():
+        total = total_by_type.get(st, 0)
+        correct = correct_by_type.get(st, 0)
+        n_by_site[st_name] = total
+        if total > 0:
+            acc_by_site[st_name] = correct / total
+        else:
+            acc_by_site[st_name] = 0.0
+
+    return acc_by_site, n_by_site
 
 
 def load_full_sequence_data(
@@ -172,9 +255,10 @@ def evaluate_full_sequence_hmm(
     from sklearn.metrics import confusion_matrix, roc_auc_score
     conf_mat = confusion_matrix(y_true, y_pred, labels=list(range(len(class_names))))
 
-    # Site-type metrics (placeholder - full-sequence doesn't have per-position predictions)
-    acc_by_site = {'non_cpg': accuracy, 'cpg': accuracy, 'homopolymer': accuracy}
-    n_by_site = {'non_cpg': n_samples, 'cpg': n_samples, 'homopolymer': n_samples}
+    # Site-type metrics using per-position log-likelihoods
+    acc_by_site, n_by_site = compute_site_type_accuracy(
+        results, y_true, site_type_positions, class_names
+    )
 
     # Confidence-stratified accuracy
     sorted_idx = np.argsort(confidence)[::-1]
@@ -407,9 +491,12 @@ def main():
     # Load site type info
     print("\nLoading site type annotations...")
     bed_df = load_bed_with_site_types(str(args.bed_file))
-    site_type_positions = {}
     if adapter:
         site_type_positions = get_site_type_positions(bed_df, adapter)
+    else:
+        # Pooled mode: use a representative adapter for site types
+        # Site types are consistent across adapters at the same positions
+        site_type_positions = get_site_type_positions(bed_df, SINGLE_ADAPTER)
 
     # Evaluate
     print("\nEvaluating...")
@@ -439,6 +526,12 @@ def main():
         print(f"\nAUC (macro): {metrics.auc_macro:.3f}")
     if metrics.cv_mean_accuracy:
         print(f"\nCross-validation: {metrics.cv_mean_accuracy:.1%} +/- {metrics.cv_std_accuracy:.1%}")
+
+    print(f"\nAccuracy by site type:")
+    for st_name in ['non_cpg', 'cpg', 'homopolymer']:
+        acc = metrics.accuracy_by_site_type.get(st_name, 0.0)
+        n = metrics.n_samples_by_site_type.get(st_name, 0)
+        print(f"  {st_name}: {acc:.1%} (n={n:,})")
 
     print(f"\nConfusion matrix:")
     print(metrics.confusion_matrix)

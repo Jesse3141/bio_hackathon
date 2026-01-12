@@ -43,6 +43,10 @@ from methylation_hmm.evaluation import (
     generate_plots,
 )
 from methylation_hmm.evaluation.output_formatters import generate_comparison_table
+from methylation_hmm.evaluation.site_type_metrics import (
+    load_bed_with_site_types,
+    get_site_type_positions,
+)
 
 
 # Configuration definitions
@@ -69,6 +73,7 @@ def run_single_evaluation(
     config: Dict,
     signal_csv: Path,
     output_dir: Path,
+    bed_file: Path,
     test_split: float = 0.2,
     cv_folds: int = 5,
     seed: int = 42,
@@ -81,6 +86,7 @@ def run_single_evaluation(
         config: Configuration dict with name, mode, emission_source
         signal_csv: Path to signal_full_sequence.csv
         output_dir: Base output directory
+        bed_file: Path to BED file with site types
         test_split: Test set fraction
         cv_folds: Number of CV folds
         seed: Random seed
@@ -133,6 +139,12 @@ def run_single_evaluation(
     params_path = config_output / "emission_params.json"
     emission_params.save(str(params_path))
 
+    # Load site type positions
+    print("Loading site type annotations...")
+    bed_df = load_bed_with_site_types(str(bed_file))
+    # Use representative adapter for site types (consistent across adapters at same positions)
+    site_type_positions = get_site_type_positions(bed_df, SINGLE_ADAPTER)
+
     # Evaluate
     print("Evaluating...")
     metrics = evaluate_full_sequence_hmm(
@@ -141,6 +153,7 @@ def run_single_evaluation(
         mode=mode,
         cv_folds=cv_folds,
         train_df=train_df,
+        site_type_positions=site_type_positions,
     )
 
     # Print summary
@@ -199,6 +212,11 @@ def generate_summary_table(
         # Per-class accuracy
         for class_name, acc in metrics.per_class_accuracy.items():
             row[f'{class_name}_accuracy'] = acc
+
+        # Site-type accuracy
+        for st_name in ['non_cpg', 'cpg', 'homopolymer']:
+            row[f'{st_name}_accuracy'] = metrics.accuracy_by_site_type.get(st_name, 0.0)
+            row[f'{st_name}_n_samples'] = metrics.n_samples_by_site_type.get(st_name, 0)
 
         rows.append(row)
 
@@ -314,6 +332,25 @@ def generate_markdown_report(
     lines.append("This shows accuracy when only considering the most confident predictions.")
     lines.append("")
 
+    # Site-type accuracy
+    lines.append("## Accuracy by Site Type")
+    lines.append("")
+    lines.append("Per-position accuracy grouped by cytosine context:")
+    lines.append("- **non_cpg**: C not followed by G")
+    lines.append("- **cpg**: CpG dinucleotide")
+    lines.append("- **homopolymer**: CC run (adjacent cytosines)")
+    lines.append("")
+    lines.append("| Configuration | non_cpg | cpg | homopolymer |")
+    lines.append("|---------------|---------|-----|-------------|")
+
+    for name, metrics in all_metrics.items():
+        non_cpg = f"{metrics.accuracy_by_site_type.get('non_cpg', 0):.1%}"
+        cpg = f"{metrics.accuracy_by_site_type.get('cpg', 0):.1%}"
+        homo = f"{metrics.accuracy_by_site_type.get('homopolymer', 0):.1%}"
+        lines.append(f"| {name} | {non_cpg} | {cpg} | {homo} |")
+
+    lines.append("")
+
     # Cross-validation
     lines.append("## Cross-Validation Results")
     lines.append("")
@@ -348,6 +385,12 @@ def main():
         type=Path,
         default=defaults["full_signal_csv"],
         help="Path to signal_full_sequence.csv",
+    )
+    parser.add_argument(
+        "--bed-file",
+        type=Path,
+        default=defaults["bed_file"],
+        help="Path to BED file with site type annotations",
     )
     parser.add_argument(
         "--output",
@@ -418,6 +461,7 @@ def main():
                 config=config,
                 signal_csv=args.signal_csv,
                 output_dir=args.output,
+                bed_file=args.bed_file,
                 test_split=args.test_split,
                 cv_folds=args.cv_folds,
                 seed=args.seed,

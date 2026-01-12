@@ -48,6 +48,8 @@ class ClassificationResult:
     probabilities: Dict[str, float]  # {'C': 0.3, '5mC': 0.7, ...}
     confidence: float  # max prob - second max prob
     log_likelihood: float
+    # Per-position log-likelihoods for site-type analysis
+    per_position_log_probs: Optional[Dict[int, Dict[str, float]]] = None  # {pos: {'C': -1.2, '5mC': -0.8, ...}}
 
 
 @dataclass
@@ -365,6 +367,48 @@ class FullSequenceHMM:
 
         return probs
 
+    def get_per_position_log_probs(
+        self, X: np.ndarray
+    ) -> Tuple[np.ndarray, Dict[int, int]]:
+        """
+        Get per-position log-likelihoods at cytosine positions.
+
+        Args:
+            X: Array of shape (n_samples, seq_len) - current values at all positions
+
+        Returns:
+            Tuple of:
+            - Array of shape (n_samples, n_cytosines, n_classes) with log-likelihoods
+            - Dict mapping cytosine index (0-7) to position number
+        """
+        if not self.is_fitted:
+            raise ValueError("Model not fitted")
+
+        n_samples = X.shape[0]
+        seq_len = X.shape[1]
+
+        # Only compute for cytosine positions
+        cytosine_positions = [p for p in self.CYTOSINE_POSITIONS if p < seq_len]
+        n_cytosines = len(cytosine_positions)
+        pos_map = {i: p for i, p in enumerate(cytosine_positions)}
+
+        per_pos_log_probs = np.zeros((n_samples, n_cytosines, self.n_classes))
+
+        for pos_idx, pos in enumerate(cytosine_positions):
+            for mod_idx, mod in enumerate(self.modifications):
+                state_idx = self.state_to_idx.get((pos, mod))
+                if state_idx is None:
+                    continue
+
+                dist = self.model.distributions[state_idx]
+                obs = torch.tensor(X[:, pos:pos+1].astype(np.float32))
+
+                with torch.no_grad():
+                    log_p = dist.log_probability(obs).numpy()
+                per_pos_log_probs[:, pos_idx, mod_idx] = log_p.flatten()
+
+        return per_pos_log_probs, pos_map
+
     def classify_dataframe(
         self,
         df: pd.DataFrame,
@@ -415,6 +459,9 @@ class FullSequenceHMM:
         probs = self.predict_proba(X)
         preds = np.argmax(probs, axis=1)
 
+        # Compute per-position log-likelihoods for site-type analysis
+        per_pos_log_probs, pos_map = self.get_per_position_log_probs(X)
+
         # Compute log-likelihoods for reporting
         log_probs_sum = np.zeros(len(X))
         for pos_idx, pos in enumerate(pos_cols):
@@ -434,6 +481,14 @@ class FullSequenceHMM:
             sorted_probs = np.sort(probs[i])[::-1]
             confidence = sorted_probs[0] - sorted_probs[1]
 
+            # Build per-position log-prob dict: {position: {'C': val, '5mC': val, ...}}
+            per_pos_dict = {}
+            for pos_idx, pos in pos_map.items():
+                per_pos_dict[pos] = {
+                    m: float(per_pos_log_probs[i, pos_idx, j])
+                    for j, m in enumerate(self.modifications)
+                }
+
             results.append(ClassificationResult(
                 read_id=str(read_ids[i]),
                 prediction=self.modifications[preds[i]],
@@ -441,6 +496,7 @@ class FullSequenceHMM:
                 probabilities={m: float(probs[i, j]) for j, m in enumerate(self.modifications)},
                 confidence=float(confidence),
                 log_likelihood=float(log_probs_sum[i]),
+                per_position_log_probs=per_pos_dict,
             ))
 
         return results

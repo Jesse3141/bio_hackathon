@@ -1,5 +1,7 @@
 # Profile HMM for Nanopore Methylation Detection
 
+> **Related Documentation**: [../README.md](../README.md) | [../RESULTS.md](../RESULTS.md) | [../TESTING_METHODOLOGY.md](../TESTING_METHODOLOGY.md) | [../SIGNAL_ALIGNMENT_SETUP.md](../SIGNAL_ALIGNMENT_SETUP.md)
+
 ---
 
 ## Progress Tracker
@@ -18,58 +20,121 @@
 | `training.py` | [x] | Baum-Welch training |
 | `evaluation.py` | [x] | Metrics & curves |
 
-### Phase 2: Data Preparation [WAITING]
+### Phase 2: Data Preparation [COMPLETE]
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Run uncalled4 signal alignment | [ ] | `uncalled4 align` on POD5 + BAM |
-| Export segments to TSV | [ ] | Format: `read_id, segment_idx, mean_current, std` |
-| Control sample TSV | [ ] | From `control1_filtered_adapter_01.pod5` |
-| 5mC sample TSV | [ ] | From `5mc_filtered_adapter_01.pod5` |
+| Run uncalled4 signal alignment | [x] | 2,617 control + 1,274 modified reads aligned |
+| Export signal at cytosine positions | [x] | 30,402 measurements at 8 positions |
+| Control sample data | [x] | From `control1_filtered_adapter_01.pod5` |
+| 5mC sample data | [x] | From `5mc_filtered_adapter_01.pod5` |
+| Generate emission parameters | [x] | `output/hmm_emission_params_pomegranate.json` |
 
-### Phase 3: Model Training & Evaluation [PENDING]
+### Phase 3: Model Training & Evaluation [COMPLETE]
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Validate package imports | [ ] | Test with `python -c "from methylation_hmm import *"` |
-| Build initial HMM | [ ] | 318 states, 8 forks |
-| Train on labeled data | [ ] | Baum-Welch with filter score > 0.1 |
-| Evaluate accuracy | [ ] | Target: ~97% on top 26% reads |
-| Tune methylation_shift | [ ] | Adjust from default 0.8 if needed |
+| Validate package imports | [x] | All imports working |
+| Build likelihood-ratio HMMs | [x] | 8-state control + 8-state modified models |
+| Train on labeled data | [x] | Baum-Welch on train split |
+| Evaluate accuracy | [x] | **70.9% accuracy** on test set (642 reads) |
+| Per-class accuracy | [x] | Control: 72.2%, Modified: 67.9% |
+
+**Key Result**: Achieved 70.9% accuracy on held-out test data using likelihood-ratio classification between two HMMs (control vs modified), based on +36.7 pA signal difference between C and 5mC.
+
+### Phase 4: Classifier Comparison & Cross-Validation [COMPLETE]
+
+| Task | Status | Notes |
+|------|--------|-------|
+| AUC/ROC plots for simplified classifier | [x] | ROC AUC = 0.759, AP = 0.616 |
+| Per-position AUC analysis | [x] | Position 38 best (AUC=0.734), Position 110 worst (AUC=0.561) |
+| Fork HMM implementation | [x] | Single model with C/5mC fork paths at each position |
+| 5-fold cross-validation | [x] | Both classifiers evaluated |
+| Classifier comparison | [x] | Simplified outperforms Fork HMM |
+
+**Cross-Validation Results:**
+
+| Classifier | CV Accuracy | CV AUC |
+|------------|-------------|--------|
+| Simplified (Two-HMM) | **71.3% ± 2.0%** | **0.772 ± 0.022** |
+| Fork HMM (Single Model) | 59.5% ± 1.3% | 0.598 ± 0.015 |
+
+**Key Insight**: The two-HMM likelihood-ratio approach outperforms a single fork-based HMM because:
+1. Separate training preserves distinct emission patterns for each class
+2. The simplified classifier benefits from Baum-Welch optimizing each model independently
+3. Top 26% confidence filtering achieves **85%** accuracy (simplified) vs 61% (fork)
+
+### Phase 5: Schreiber-Karplus Style Evaluation [COMPLETE]
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Map paper metrics to our models | [x] | Filter Score → confidence, MCSC → MCA |
+| Implement SchreiberKarplusEvaluator | [x] | Full evaluation module |
+| Run evaluation on both classifiers | [x] | Results in RESULTS.md |
+| Generate MCA curve plots | [x] | `output/plots/schreiber_karplus_mca_comparison.png` |
+
+**Schreiber-Karplus Comparison:**
+
+| Metric | Paper Baseline | Simplified | Fork HMM |
+|--------|----------------|------------|----------|
+| Accuracy @ 25% | **97.7%** | **85.0%** | 60.0% |
+| Accuracy @ 50% | ~90% | 81.3% | 59.2% |
+| Overall Accuracy | ~75-80% | 70.9% | 56.4% |
+
+**Gap Analysis**: 12.7 percentage point gap from paper's top-25% accuracy due to:
+- No label fork validation (T/X/CAT dual signal)
+- Different chemistry (R10.4.1 vs R7.3)
+- Simpler model (8 states vs ~300+ states with artifact handling)
 
 ---
 
-## What's Left To Do
+## All Phases Complete
 
-1. **Generate TSV files** using uncalled4:
-   ```bash
-   # Align signals to reference
-   uncalled4 align -i control1_filtered_adapter_01.pod5 \
-                   -r filtered_pod_files/adapter_1_seq \
-                   -o control_aligned.bam
+The methylation HMM pipeline is now fully functional with:
+- Signal alignment from POD5 files via Dorado + uncalled4
+- Trained HMM classifier achieving **70.9% accuracy**
+- Saved model: `output/trained_methylation_model.pt`
+- 18 passing tests validating the pipeline
 
-   # Export to TSV (you'll need to write this or use uncalled4's output)
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   pip install pomegranate torch pandas numpy
-   ```
-
-3. **Run the pipeline** (see Quick Start below)
-
-4. **Tune hyperparameters** if accuracy is low:
-   - `methylation_shift`: Start at 0.8, adjust based on signal distributions
-   - `filter_score_threshold`: Lower if too few reads pass, raise for higher accuracy
+**Future improvements** (optional):
+- Add more training data to improve accuracy
+- Implement confidence-based filtering (top N% most confident predictions)
+- Extend to 5hmC detection with three-class classification
 
 ---
 
-## Quick Start (once you have TSV data)
+## Quick Start (Recommended: Simplified Pipeline)
 
 ```python
 import sys
 sys.path.insert(0, '/home/jesse/repos/bio_hackathon')
 
+from methylation_hmm import SimplifiedMethylationClassifier, run_full_pipeline
+
+# Option 1: Train from scratch
+classifier, metrics = run_full_pipeline(
+    training_csv='output/hmm_training_sequences.csv',
+    emission_params_json='output/hmm_emission_params_pomegranate.json',
+    output_model='output/trained_methylation_model.pt'
+)
+print(f"Accuracy: {metrics.accuracy:.1%}")
+
+# Option 2: Load pre-trained model
+classifier = SimplifiedMethylationClassifier.from_json(
+    'output/hmm_emission_params_pomegranate.json'
+)
+
+# Classify new data
+import pandas as pd
+new_data = pd.read_csv('your_data.csv')  # Must have columns: 38, 50, 62, 74, 86, 98, 110, 122
+results = classifier.classify_dataframe(new_data)
+for r in results[:5]:
+    print(f"{r.read_id}: {r.prediction} (confidence: {r.confidence:.2f})")
+```
+
+## Alternative: Full Profile HMM (Original Design)
+
+```python
 from methylation_hmm import (
     default_config, build_hmm_from_config,
     DataLoader, MethylationClassifier, BaumWelchTrainer
@@ -155,15 +220,19 @@ Each path has different emission parameters:
 
 ```
 methylation_hmm/
-├── __init__.py
-├── config.py           # HMMConfig dataclass with hyperparameters
-├── kmer_model.py       # Load 9mer_levels_v1.txt, lookup functions
-├── distributions.py    # Create Normal distributions for states
-├── hmm_builder.py      # Build DenseHMM with transitions/emissions
-├── data_loader.py      # Parse TSV, group by read, normalize
-├── training.py         # Baum-Welch training loop
-├── classification.py   # Forward-backward, fork posteriors
-└── evaluation.py       # Accuracy, confusion matrix, curves
+├── __init__.py             # Package exports
+├── config.py               # HMMConfig dataclass with hyperparameters
+├── kmer_model.py           # Load 9mer_levels_v1.txt, lookup functions
+├── distributions.py        # Create Normal distributions for states
+├── hmm_builder.py          # Build DenseHMM with transitions/emissions
+├── data_loader.py          # Parse TSV, group by read, normalize
+├── training.py             # Baum-Welch training loop
+├── classification.py       # Forward-backward, fork posteriors
+├── evaluation.py           # Accuracy, confusion matrix, curves
+├── simplified_pipeline.py  # [NEW] Likelihood-ratio classifier (recommended)
+└── tests/
+    ├── test_hmm_pipeline.py       # Core HMM tests (12 tests)
+    └── test_simplified_pipeline.py # Simplified pipeline tests (6 tests)
 ```
 
 ---
