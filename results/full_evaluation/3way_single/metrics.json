@@ -16,13 +16,13 @@
   },
   "by_site_type": {
     "accuracy": {
-      "non_cpg": 0.5196408529741863,
-      "cpg": 0.5196408529741863,
-      "homopolymer": 0.5196408529741863
+      "non_cpg": 0.4505050505050505,
+      "cpg": 0.3658810325476992,
+      "homopolymer": 0.43546576879910215
     },
     "n_samples": {
-      "non_cpg": 891,
-      "cpg": 891,
+      "non_cpg": 4455,
+      "cpg": 1782,
       "homopolymer": 891
     }
   },

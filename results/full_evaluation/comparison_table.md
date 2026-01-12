@@ -1,6 +1,6 @@
 # Full-Sequence HMM Evaluation Results
 
-Generated: 2026-01-12 11:22:33
+Generated: 2026-01-12 11:49:57
 
 ## Overview
 
@@ -53,6 +53,20 @@ reference sequence. The key variable is **emission parameter source**:
 | 3way_pooled | 48.5% | 50.3% | 46.9% |
 
 This shows accuracy when only considering the most confident predictions.
+
+## Accuracy by Site Type
+
+Per-position accuracy grouped by cytosine context:
+- **non_cpg**: C not followed by G
+- **cpg**: CpG dinucleotide
+- **homopolymer**: CC run (adjacent cytosines)
+
+| Configuration | non_cpg | cpg | homopolymer |
+|---------------|---------|-----|-------------|
+| binary_single | 61.8% | 56.9% | 60.0% |
+| binary_pooled | 55.6% | 52.9% | 53.4% |
+| 3way_single | 45.1% | 36.6% | 43.5% |
+| 3way_pooled | 40.8% | 40.6% | 40.6% |
 
 ## Cross-Validation Results
 

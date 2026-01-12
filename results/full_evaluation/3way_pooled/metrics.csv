@@ -4,9 +4,9 @@ FullSequenceHMM_3way_pooled,3way,all,overall,n_samples,25049.0
 FullSequenceHMM_3way_pooled,3way,all,per_class,C_accuracy,0.548420631747301
 FullSequenceHMM_3way_pooled,3way,all,per_class,5mC_accuracy,0.5694444444444444
 FullSequenceHMM_3way_pooled,3way,all,per_class,5hmC_accuracy,0.19054054054054054
-FullSequenceHMM_3way_pooled,3way,all,site_type,non_cpg_accuracy,0.469399976046948
-FullSequenceHMM_3way_pooled,3way,all,site_type,cpg_accuracy,0.469399976046948
-FullSequenceHMM_3way_pooled,3way,all,site_type,homopolymer_accuracy,0.469399976046948
+FullSequenceHMM_3way_pooled,3way,all,site_type,non_cpg_accuracy,0.40811210028344447
+FullSequenceHMM_3way_pooled,3way,all,site_type,cpg_accuracy,0.4062836839794004
+FullSequenceHMM_3way_pooled,3way,all,site_type,homopolymer_accuracy,0.40600423170585653
 FullSequenceHMM_3way_pooled,3way,all,confidence,top_25pct_accuracy,0.4845097412967103
 FullSequenceHMM_3way_pooled,3way,all,confidence,top_50pct_accuracy,0.5029543276908336
 FullSequenceHMM_3way_pooled,3way,all,confidence,top_100pct_accuracy,0.469399976046948
