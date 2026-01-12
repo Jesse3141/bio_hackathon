@@ -1,0 +1,62 @@
+{
+  "model": "FullSequenceHMM_binary_single",
+  "mode": "binary",
+  "adapters": [
+    "5mers_rand_ref_adapter_01"
+  ],
+  "overall": {
+    "accuracy": 0.7095375722543352,
+    "n_samples": 692,
+    "n_correct": 491
+  },
+  "per_class": {
+    "C": 0.7435344827586207,
+    "5mC": 0.6403508771929824
+  },
+  "by_site_type": {
+    "accuracy": {
+      "non_cpg": 0.7095375722543352,
+      "cpg": 0.7095375722543352,
+      "homopolymer": 0.7095375722543352
+    },
+    "n_samples": {
+      "non_cpg": 692,
+      "cpg": 692,
+      "homopolymer": 692
+    }
+  },
+  "confidence_stratified": {
+    "top_25pct": 0.8497109826589595,
+    "top_50pct": 0.8352601156069365,
+    "top_100pct": 0.7095375722543352
+  },
+  "confusion_matrix": [
+    [
+      345,
+      119
+    ],
+    [
+      82,
+      146
+    ]
+  ],
+  "auc": {
+    "macro": 0.779491833030853,
+    "per_class": {
+      "C": 0.779491833030853,
+      "5mC": 0.779491833030853
+    }
+  },
+  "cross_validation": null,
+  "emission_params_summary": {
+    "source": "single",
+    "mode": "binary",
+    "n_positions": 155,
+    "n_cytosines": 8,
+    "mean_C_current": 813.7430302783572,
+    "mean_C_std": 90.53509692709878,
+    "mean_delta_5mC_C": 36.51222519821759,
+    "mean_delta_5hmC_C": 0
+  },
+  "sequence_length": 155
+}

@@ -1,0 +1,141 @@
+{
+  "model_type": "circuit_board_hmm",
+  "n_positions": 8,
+  "positions": [
+    38,
+    50,
+    62,
+    74,
+    86,
+    98,
+    110,
+    122
+  ],
+  "distributions": [
+    {
+      "position": 38,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 890.5593509851533,
+        "std": 84.61730235566975,
+        "n": 2576
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 938.3957863716223,
+        "std": 81.83730817362469,
+        "n": 1199
+      }
+    },
+    {
+      "position": 50,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 822.3850575161216,
+        "std": 104.36908027999714,
+        "n": 2589
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 861.643579126771,
+        "std": 105.78311730849283,
+        "n": 1207
+      }
+    },
+    {
+      "position": 62,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 816.518609273131,
+        "std": 99.36739233740751,
+        "n": 2593
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 853.1066532201611,
+        "std": 105.27178654823715,
+        "n": 1256
+      }
+    },
+    {
+      "position": 74,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 831.5876459760941,
+        "std": 82.22738586956241,
+        "n": 2547
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 873.9692884358202,
+        "std": 80.13337748836906,
+        "n": 1264
+      }
+    },
+    {
+      "position": 86,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 792.6763248914489,
+        "std": 98.73475824116908,
+        "n": 2596
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 828.2097265579337,
+        "std": 96.3256645130865,
+        "n": 1255
+      }
+    },
+    {
+      "position": 98,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 779.1757170387542,
+        "std": 94.66489594964708,
+        "n": 2609
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 807.7642742810445,
+        "std": 89.98380834694436,
+        "n": 1269
+      }
+    },
+    {
+      "position": 110,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 772.9588603011713,
+        "std": 90.36943332623329,
+        "n": 2503
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 800.8058527796627,
+        "std": 88.61867614440317,
+        "n": 1165
+      }
+    },
+    {
+      "position": 122,
+      "C": {
+        "type": "NormalDistribution",
+        "mean": 794.3005593292214,
+        "std": 89.36103076021018,
+        "n": 2533
+      },
+      "mC": {
+        "type": "NormalDistribution",
+        "mean": 831.3689256085888,
+        "std": 90.02259442987402,
+        "n": 1241
+      }
+    }
+  ],
+  "metadata": {
+    "source": "signal_alignment_pipeline",
+    "control_sample": "canonical_C",
+    "modified_sample": "5mC"
+  }
+}
