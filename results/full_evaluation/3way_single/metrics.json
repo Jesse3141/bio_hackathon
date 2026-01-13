@@ -56,7 +56,26 @@
       "5hmC": 0.6742820944639035
     }
   },
-  "cross_validation": null,
+  "cross_validation": {
+    "mean_accuracy": 0.5361955719371896,
+    "std_accuracy": 0.02570656217795907,
+    "fold_accuracies": [
+      0.5677491601343785,
+      0.5538116591928252,
+      0.5,
+      0.5123318385650224,
+      0.547085201793722
+    ],
+    "mean_auc": 0.0,
+    "std_auc": 0.0,
+    "fold_aucs": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
   "significance": {
     "accuracy": {
       "ci_95": [
