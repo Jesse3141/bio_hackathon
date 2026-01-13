@@ -11,5 +11,3 @@ FullSequenceHMM_3way_pooled,3way,all,confidence,top_25pct_accuracy,0.48450974129
 FullSequenceHMM_3way_pooled,3way,all,confidence,top_50pct_accuracy,0.5029543276908336
 FullSequenceHMM_3way_pooled,3way,all,confidence,top_100pct_accuracy,0.469399976046948
 FullSequenceHMM_3way_pooled,3way,all,auc,macro,0.6153821133132794
-FullSequenceHMM_3way_pooled,3way,all,cv,mean_accuracy,0.4687170185153636
-FullSequenceHMM_3way_pooled,3way,all,cv,std_accuracy,0.0032774527492054934

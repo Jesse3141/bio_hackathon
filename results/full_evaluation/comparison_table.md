@@ -1,6 +1,6 @@
 # Full-Sequence HMM Evaluation Results
 
-Generated: 2026-01-12 11:49:57
+Generated: 2026-01-13 10:47:44
 
 ## Overview
 
@@ -11,12 +11,12 @@ reference sequence. The key variable is **emission parameter source**:
 
 ## Summary Table
 
-| Configuration | Mode | Emission | Overall | Top 25% | Top 50% | AUC | CV Acc |
-|---------------|------|----------|---------|---------|---------|-----|--------|
-| binary_single | binary | single | 71.0% | 85.0% | 83.5% | 0.779 | 70.9% |
-| binary_pooled | binary | pooled | 63.3% | 76.6% | 71.0% | 0.684 | 63.3% |
-| 3way_single | 3way | single | 52.0% | 54.5% | 56.6% | 0.674 | 53.6% |
-| 3way_pooled | 3way | pooled | 46.9% | 48.5% | 50.3% | 0.615 | 46.9% |
+| Configuration | Mode | Emission | Overall | 95% CI | Top 25% | AUC | p-value |
+|---------------|------|----------|---------|--------|---------|-----|---------|
+| binary_single | binary | single | 71.0% | [67.5%, 74.2%] | 85.0% | 0.779 | 6.74e-29 |
+| binary_pooled | binary | pooled | 63.3% | [62.6%, 64.0%] | 76.6% | 0.684 | 8.83e-299 |
+| 3way_single | 3way | single | 52.0% | [48.7%, 55.2%] | 54.5% | 0.674 | 3.45e-30 |
+| 3way_pooled | 3way | pooled | 46.9% | [46.3%, 47.6%] | 48.5% | 0.615 | 0.00e+00 |
 
 ## Best Configuration
 
@@ -61,18 +61,13 @@ Per-position accuracy grouped by cytosine context:
 - **cpg**: CpG dinucleotide
 - **homopolymer**: CC run (adjacent cytosines)
 
-| Configuration | non_cpg | cpg | homopolymer |
-|---------------|---------|-----|-------------|
-| binary_single | 61.8% | 56.9% | 60.0% |
-| binary_pooled | 55.6% | 52.9% | 53.4% |
-| 3way_single | 45.1% | 36.6% | 43.5% |
-| 3way_pooled | 40.8% | 40.6% | 40.6% |
+| Configuration | non_cpg | 95% CI | cpg | 95% CI | homopolymer | 95% CI |
+|---------------|---------|--------|-----|--------|-------------|--------|
+| binary_single | 61.8% | [60.2%, 63.5%] | 56.9% | [54.3%, 59.5%] | 60.0% | [56.3%, 63.6%] |
+| binary_pooled | 55.6% | [55.3%, 55.9%] | 52.9% | [52.4%, 53.4%] | 53.4% | [52.7%, 54.1%] |
+| 3way_single | 45.1% | [43.6%, 46.5%] | 36.6% | [34.4%, 38.9%] | 43.5% | [40.3%, 46.8%] |
+| 3way_pooled | 40.8% | [40.5%, 41.1%] | 40.6% | [40.2%, 41.1%] | 40.6% | [40.0%, 41.2%] |
 
 ## Cross-Validation Results
 
-| Configuration | Mean Acc | Std |
-|---------------|----------|-----|
-| binary_single | 70.9% | 2.1% |
-| binary_pooled | 63.3% | 0.4% |
-| 3way_single | 53.6% | 2.6% |
-| 3way_pooled | 46.9% | 0.3% |
+Cross-validation was not run.
